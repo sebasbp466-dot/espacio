@@ -25,22 +25,23 @@ jobs:
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
           CFG
+      - name: Plantilla Gradle
+        run: |
+          mkdir -p android/build
+          unzip -o -q ~/.local/share/godot/export_templates/4.3.stable/android_source.zip -d android/build
+          echo "4.3.stable" > android/.build_version
+          touch android/build/.gdignore
+          sed 's/use_gradle_build=false/use_gradle_build=true/' export_presets_full.cfg > export_presets.cfg
           godot --headless --import || true
       - name: Exportar
         shell: bash
         run: |
-          rm -f build/android/espacio.apk
-          intento() { godot --headless --export-debug "Android" build/android/espacio.apk > /tmp/o.txt 2>&1; [ -f build/android/espacio.apk ]; }
-          echo "RESULT probando 1 preset actual"
-          if intento; then echo "RESULT GANA 1 preset actual"; exit 0; fi
+          export ANDROID_HOME=/usr/lib/android-sdk ANDROID_SDK_ROOT=/usr/lib/android-sdk
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
-          echo "RESULT probando 2 variables de keystore"
-          if intento; then echo "RESULT GANA 2 variables de keystore"; exit 0; fi
-          cp export_presets_full.cfg export_presets.cfg
-          echo "RESULT probando 3 preset completo mas variables"
-          if intento; then echo "RESULT GANA 3 preset completo mas variables"; exit 0; fi
-          echo "RESULT NINGUNA FUNCIONO"
-          tail -n 40 /tmp/o.txt
+          godot --headless --export-debug "Android" build/android/espacio.apk > /tmp/o.txt 2>&1
+          if [ -f build/android/espacio.apk ]; then echo "RESULT GANA gradle"; exit 0; fi
+          echo "RESULT FALLA gradle"
+          tail -n 60 /tmp/o.txt
           exit 1
       - uses: actions/upload-artifact@v4
         with:
