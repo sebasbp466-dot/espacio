@@ -26,16 +26,22 @@ jobs:
           export/android/debug_keystore_pass = "android"
           CFG
           godot --headless --import || true
-      - name: Diagnostico
-        run: |
-          set +e
-          echo "DIAG config:"; ls -la ~/.config/godot
-          echo "DIAG ajustes:"; cat ~/.config/godot/editor_settings-*.tres | grep export/android
-          echo "DIAG keystore:"; ls -la /root/debug.keystore
-          echo "DIAG java:"; readlink -f $(which javac)
-          echo "DIAG sdk:"; ls /usr/lib/android-sdk /usr/lib/android-sdk/build-tools /usr/lib/android-sdk/platforms
       - name: Exportar
-        run: godot --headless --verbose --export-debug "Android" build/android/espacio.apk
+        shell: bash
+        run: |
+          rm -f build/android/espacio.apk
+          intento() { godot --headless --export-debug "Android" build/android/espacio.apk > /tmp/o.txt 2>&1; [ -f build/android/espacio.apk ]; }
+          echo "RESULT probando 1 preset actual"
+          if intento; then echo "RESULT GANA 1 preset actual"; exit 0; fi
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH=/root/debug.keystore GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          echo "RESULT probando 2 variables de keystore"
+          if intento; then echo "RESULT GANA 2 variables de keystore"; exit 0; fi
+          cp export_presets_full.cfg export_presets.cfg
+          echo "RESULT probando 3 preset completo mas variables"
+          if intento; then echo "RESULT GANA 3 preset completo mas variables"; exit 0; fi
+          echo "RESULT NINGUNA FUNCIONO"
+          tail -n 40 /tmp/o.txt
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: espacio-apk
