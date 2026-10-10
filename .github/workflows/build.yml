@@ -24,6 +24,15 @@ jobs:
             echo 'export/android/debug_keystore_pass = "android"' >> $S
           done
           godot --headless --import || true
+      - name: Diagnostico
+        run: |
+          echo "DIAG home=$HOME ver=$GODOT_VERSION"
+          echo "DIAG plantillas:"; ls ~/.local/share/godot/export_templates/4.3.stable | head -5
+          echo "DIAG apks:"; find / -name 'android_*.apk' -not -path '/proc/*' 2>/dev/null
+          echo "DIAG ajustes:"; grep -h export/android ~/.config/godot/editor_settings-*.tres
+          echo "DIAG keystore:"; ls -la /root/debug.keystore
+          echo "DIAG java:"; readlink -f $(which javac)
+          echo "DIAG sdk:"; ls /usr/lib/android-sdk /usr/lib/android-sdk/build-tools /usr/lib/android-sdk/platforms
       - name: Exportar
         run: godot --headless --verbose --export-debug "Android" build/android/espacio.apk
       - uses: actions/upload-artifact@v4
