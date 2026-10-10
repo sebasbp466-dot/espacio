@@ -1,0 +1,27 @@
+name: build-apk
+on: [push, workflow_dispatch]
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    container: barichello/godot-ci:4.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar
+        run: |
+          mkdir -p build/android ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore /root/debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
+          godot --headless -e --quit || true
+          for S in ~/.config/godot/editor_settings-*.tres; do
+            echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"' >> $S
+            echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $S
+            echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $S
+            echo 'export/android/debug_keystore_pass = "android"' >> $S
+          done
+          godot --headless --import || true
+      - name: Exportar
+        run: godot --headless --export-debug "Android" build/android/espacio.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: espacio-apk
+          path: build/android/espacio.apk
